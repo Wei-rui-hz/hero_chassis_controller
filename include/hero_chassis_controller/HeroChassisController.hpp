@@ -1,29 +1,29 @@
 #pragma once
 
-#include "ros_package_template/Algorithm.hpp"
+#include "hero_chassis_controller/Algorithm.hpp"
 
 // ROS
 #include <ros/ros.h>
 #include <sensor_msgs/Temperature.h>
 #include <std_srvs/Trigger.h>
 
-namespace ros_package_template {
+namespace hero_chassis_controller {
 
 /*!
  * Main class for the node to handle the ROS interfacing.
  */
-class RosPackageTemplate {
+class HeroChassisController {
  public:
   /*!
    * Constructor.
    * @param nodeHandle the ROS node handle.
    */
-  RosPackageTemplate(ros::NodeHandle &nodeHandle);
+  HeroChassisController(ros::NodeHandle &nodeHandle);
 
   /*!
    * Destructor.
    */
-  virtual ~RosPackageTemplate();
+  virtual ~HeroChassisController();
 
  private:
   /*!

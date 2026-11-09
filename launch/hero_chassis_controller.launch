@@ -1,8 +1,8 @@
 <launch>
 
-  <!-- Launch ROS Package Template Node -->
-  <node pkg="ros_package_template" type="ros_package_template" name="ros_package_template" output="screen">
-    <rosparam command="load" file="$(dirname)/../config/default.yaml"/>
+  <!-- Launch hero chassis controller node -->
+  <node pkg="hero_chassis_controller" type="hero_chassis_controller" name="hero_chassis_controller" output="screen">
+    <rosparam command="load" file="$(dirname)/../config/hero_chassis_controller.yaml"/>
   </node>
 
 </launch>
