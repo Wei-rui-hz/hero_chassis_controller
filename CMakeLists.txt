@@ -18,6 +18,8 @@ find_package(catkin REQUIRED
     controller_interface
     hardware_interface
     pluginlib
+    geometry_msgs
+    realtime_tools
     )
 
 ## Find system libraries

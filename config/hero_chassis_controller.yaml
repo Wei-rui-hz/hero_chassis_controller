@@ -1,6 +1,10 @@
 controller:
   hero_chassis_controller:
     type: hero_chassis_controller/HeroChassisController
+    wheel_radius: 0.07625
+    half_length: 0.2
+    half_width: 0.2
+    proportional_gain: 1.0
 
   joint_state_controller:
     type: joint_state_controller/JointStateController
