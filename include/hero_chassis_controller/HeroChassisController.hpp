@@ -5,6 +5,9 @@
 #include <hardware_interface/joint_command_interface.h>
 #include <realtime_tools/realtime_buffer.h>
 #include <ros/ros.h>
+#include <control_toolbox/pid.h>
+#include <dynamic_reconfigure/server.h>
+#include <hero_chassis_controller/HeroChassisControllerConfig.h>
 
 namespace hero_chassis_controller {
 
@@ -21,14 +24,17 @@ class HeroChassisController
 
  private:
   void cmdVelCallback(const geometry_msgs::Twist& msg);
+  void reconfigCallback(HeroChassisControllerConfig& config, uint32_t level);
+  boost::shared_ptr<dynamic_reconfigure::Server<HeroChassisControllerConfig>> reconfig_server_;
 
   hardware_interface::JointHandle joint_handle_[4];  // LF RF LB RB
-  double desired_wheel_vel_[4]{};
+  double desired_wheel_vel_[4]{};  // LF RF LB RB
+
+  control_toolbox::Pid pid_[4];  // 一个轮子一个，各自持有积分状态
 
   double wheel_radius_{0.07625};
   double half_length_{0.2};
   double half_width_{0.2};
-  double kp_{1.0};
 
   realtime_tools::RealtimeBuffer<geometry_msgs::Twist> cmd_vel_buffer_;
   ros::Subscriber cmd_vel_sub_;

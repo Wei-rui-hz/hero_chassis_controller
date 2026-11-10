@@ -15,13 +15,15 @@ bool HeroChassisController::init(hardware_interface::EffortJointInterface* effor
   controller_nh.param("wheel_radius", wheel_radius_, 0.07625);
   controller_nh.param("half_length", half_length_, 0.2);
   controller_nh.param("half_width", half_width_, 0.2);
-  controller_nh.param("proportional_gain", kp_, 1.0);
+  reconfig_server_.reset(new dynamic_reconfigure::Server<HeroChassisControllerConfig>(controller_nh));
+  reconfig_server_->setCallback(
+      [this](HeroChassisControllerConfig& config, uint32_t level) { reconfigCallback(config, level); });
 
   cmd_vel_buffer_.writeFromNonRT(geometry_msgs::Twist());
   cmd_vel_sub_ = root_nh.subscribe("cmd_vel", 1, &HeroChassisController::cmdVelCallback, this);
 
   ROS_INFO_STREAM("[hero_chassis_controller] initialized: r=" << wheel_radius_
-                  << " lx=" << half_length_ << " ly=" << half_width_ << " kp=" << kp_);
+                  << " lx=" << half_length_ << " ly=" << half_width_ << " (dynamic reconfigure ready)");
   return true;
 }
 
@@ -29,14 +31,22 @@ void HeroChassisController::cmdVelCallback(const geometry_msgs::Twist& msg) {
   cmd_vel_buffer_.writeFromNonRT(msg);
 }
 
+void HeroChassisController::reconfigCallback(HeroChassisControllerConfig& config, uint32_t /*level*/) {
+  pid_[0].setGains(config.lf_p, config.lf_i, config.lf_d, config.lf_i_clamp_max, config.lf_i_clamp_min);
+  pid_[1].setGains(config.rf_p, config.rf_i, config.rf_d, config.rf_i_clamp_max, config.rf_i_clamp_min);
+  pid_[2].setGains(config.lb_p, config.lb_i, config.lb_d, config.lb_i_clamp_max, config.lb_i_clamp_min);
+  pid_[3].setGains(config.rb_p, config.rb_i, config.rb_d, config.rb_i_clamp_max, config.rb_i_clamp_min);
+}
+
 void HeroChassisController::starting(const ros::Time& /*time*/) {
   for (int i = 0; i < 4; ++i) {
     desired_wheel_vel_[i] = 0.0;
+    pid_[i].reset();
     joint_handle_[i].setCommand(0.0);
   }
 }
 
-void HeroChassisController::update(const ros::Time& /*time*/, const ros::Duration& /*period*/) {
+void HeroChassisController::update(const ros::Time& /*time*/, const ros::Duration& period) {
   geometry_msgs::Twist* cmd = cmd_vel_buffer_.readFromRT();
 
   const double vx = cmd ? cmd->linear.x : 0.0;
@@ -50,7 +60,8 @@ void HeroChassisController::update(const ros::Time& /*time*/, const ros::Duratio
   desired_wheel_vel_[3] = (vx - vy + l * wz) / wheel_radius_;
 
   for (int i = 0; i < 4; ++i) {
-    double torque = kp_ * (desired_wheel_vel_[i] - joint_handle_[i].getVelocity());
+    const double error = desired_wheel_vel_[i] - joint_handle_[i].getVelocity();
+    double torque = pid_[i].computeCommand(error, period);
     if (torque > 5.0) torque = 5.0;
     if (torque < -5.0) torque = -5.0;
     joint_handle_[i].setCommand(torque);

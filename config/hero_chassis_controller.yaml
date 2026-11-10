@@ -4,7 +4,27 @@ controller:
     wheel_radius: 0.07625
     half_length: 0.2
     half_width: 0.2
-    proportional_gain: 1.0
+    velocity_mode: chassis
+    lf_p: 1.0
+    lf_i: 0.1
+    lf_d: 0.0
+    lf_i_clamp_max: 0.3
+    lf_i_clamp_min: -0.3
+    rf_p: 1.0
+    rf_i: 0.1
+    rf_d: 0.0
+    rf_i_clamp_max: 0.3
+    rf_i_clamp_min: -0.3
+    lb_p: 1.0
+    lb_i: 0.1
+    lb_d: 0.0
+    lb_i_clamp_max: 0.3
+    lb_i_clamp_min: -0.3
+    rb_p: 1.0
+    rb_i: 0.1
+    rb_d: 0.0
+    rb_i_clamp_max: 0.3
+    rb_i_clamp_min: -0.3
 
   joint_state_controller:
     type: joint_state_controller/JointStateController

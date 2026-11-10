@@ -20,11 +20,18 @@ find_package(catkin REQUIRED
     pluginlib
     geometry_msgs
     realtime_tools
+    control_toolbox
+    dynamic_reconfigure
     )
 
 ## Find system libraries
 find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED)
+
+## Generate dynamic reconfigure parameters
+generate_dynamic_reconfigure_options(
+    cfg/HeroChassisController.cfg
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -53,6 +60,7 @@ catkin_package(
     ## Boost is not part of the DEPENDS since it is only used in source files,
     ## Dependees do not depend on Boost when they depend on this package.
 )
+
 
 ###########
 ## Build ##
@@ -86,6 +94,7 @@ add_dependencies(${PROJECT_NAME}_core
     )
 
 add_dependencies(${PROJECT_NAME}
+    ${${PROJECT_NAME}_EXPORTED_TARGETS}
     ${catkin_EXPORTED_TARGETS}
     )
 
