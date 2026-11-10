@@ -15,6 +15,9 @@ find_package(catkin REQUIRED
     roscpp
     sensor_msgs
     roslint
+    controller_interface
+    hardware_interface
+    pluginlib
     )
 
 ## Find system libraries
@@ -70,12 +73,10 @@ add_library(${PROJECT_NAME}_core
     )
 target_compile_features(${PROJECT_NAME}_core INTERFACE cxx_std_11)
 
-## Declare cpp executables
-add_executable(${PROJECT_NAME}
-    src/${PROJECT_NAME}_node.cpp
+## Declare the controller plugin library
+add_library(${PROJECT_NAME} SHARED
     src/HeroChassisController.cpp
     )
-target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_11)
 
 ## Add dependencies to exported targets, like ROS msgs or srvs
 add_dependencies(${PROJECT_NAME}_core

@@ -1,40 +1,39 @@
 #include "hero_chassis_controller/HeroChassisController.hpp"
 
-// STD
-#include <string>
+#include <pluginlib/class_list_macros.h>
 
 namespace hero_chassis_controller {
 
-HeroChassisController::HeroChassisController(ros::NodeHandle &nodeHandle)
-    : nodeHandle_(nodeHandle) {
-  if (!readParameters()) {
-    ROS_ERROR("Could not read parameters.");
-    ros::requestShutdown();
+bool HeroChassisController::init(hardware_interface::EffortJointInterface* effort_joint_interface,
+                                 ros::NodeHandle& /*root_nh*/,
+                                 ros::NodeHandle& /*controller_nh*/) {
+  const char* joint_names[4] = {"left_front_wheel_joint", "right_front_wheel_joint",
+                                "left_back_wheel_joint", "right_back_wheel_joint"};
+  for (int i = 0; i < 4; ++i) {
+    joint_handle_[i] = effort_joint_interface->getHandle(joint_names[i]);
   }
-  subscriber_ = nodeHandle_.subscribe(subscriberTopic_, 1,
-                                      &HeroChassisController::topicCallback, this);
-  serviceServer_ = nodeHandle_.advertiseService("get_average",
-                                                &HeroChassisController::serviceCallback, this);
-  ROS_INFO("Successfully launched node.");
-}
-
-HeroChassisController::~HeroChassisController() {
-}
-
-bool HeroChassisController::readParameters() {
-  if (!nodeHandle_.getParam("subscriber_topic", subscriberTopic_)) return false;
   return true;
 }
 
-void HeroChassisController::topicCallback(const sensor_msgs::Temperature &message) {
-  algorithm_.addData(message.temperature);
+void HeroChassisController::starting(const ros::Time& /*time*/) {
+  for (auto& j : joint_handle_) {
+    j.setCommand(0.0);
+  }
 }
 
-bool HeroChassisController::serviceCallback(std_srvs::Trigger::Request &request,
-                                         std_srvs::Trigger::Response &response) {
-  response.success = true;
-  response.message = "The average is " + std::to_string(algorithm_.getAverage());
-  return true;
+void HeroChassisController::update(const ros::Time& /*time*/, const ros::Duration& /*period*/) {
+  for (auto& j : joint_handle_) {
+    j.setCommand(0.0);
+  }
 }
 
-} /* namespace */
+void HeroChassisController::stopping(const ros::Time& /*time*/) {
+  for (auto& j : joint_handle_) {
+    j.setCommand(0.0);
+  }
+}
+
+}  // namespace hero_chassis_controller
+
+PLUGINLIB_EXPORT_CLASS(hero_chassis_controller::HeroChassisController,
+                       controller_interface::ControllerBase)

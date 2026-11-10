@@ -7,14 +7,17 @@
   <license>BSD</license>
   <author email="2465308638@qq.com">Qiuweiling</author>
 
-  <!-- buildtool_depend: dependencies of the build process -->
   <buildtool_depend>catkin</buildtool_depend>
-  <!-- build_depend: dependencies only used in source files -->
   <build_depend>boost</build_depend>
-  <!-- depend: build, export, and execution dependency -->
   <depend>eigen</depend>
   <depend>roscpp</depend>
   <depend>sensor_msgs</depend>
+  <depend>controller_interface</depend>
+  <depend>hardware_interface</depend>
+  <depend>pluginlib</depend>
 
   <build_depend>roslint</build_depend>
+  <export>
+    <controller_interface plugin="${prefix}/hero_chassis_controller_plugins.xml"/>
+  </export>
 </package>

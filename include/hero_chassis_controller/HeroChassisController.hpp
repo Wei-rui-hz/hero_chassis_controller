@@ -1,66 +1,23 @@
 #pragma once
 
-#include "hero_chassis_controller/Algorithm.hpp"
-
-// ROS
+#include <controller_interface/controller.h>
+#include <hardware_interface/joint_command_interface.h>
 #include <ros/ros.h>
-#include <sensor_msgs/Temperature.h>
-#include <std_srvs/Trigger.h>
 
 namespace hero_chassis_controller {
 
-/*!
- * Main class for the node to handle the ROS interfacing.
- */
-class HeroChassisController {
+class HeroChassisController
+    : public controller_interface::Controller<hardware_interface::EffortJointInterface> {
  public:
-  /*!
-   * Constructor.
-   * @param nodeHandle the ROS node handle.
-   */
-  HeroChassisController(ros::NodeHandle &nodeHandle);
+  bool init(hardware_interface::EffortJointInterface* effort_joint_interface,
+            ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
 
-  /*!
-   * Destructor.
-   */
-  virtual ~HeroChassisController();
+  void starting(const ros::Time& time) override;
+  void update(const ros::Time& time, const ros::Duration& period) override;
+  void stopping(const ros::Time& time) override;
 
  private:
-  /*!
-   * Reads and verifies the ROS parameters.
-   * @return true if successful.
-   */
-  bool readParameters();
-
-  /*!
-   * ROS topic callback method.
-   * @param message the received message.
-   */
-  void topicCallback(const sensor_msgs::Temperature &message);
-
-  /*!
-   * ROS service server callback.
-   * @param request the request of the service.
-   * @param response the provided response.
-   * @return true if successful, false otherwise.
-   */
-  bool serviceCallback(std_srvs::Trigger::Request &request,
-                       std_srvs::Trigger::Response &response);
-
-  //! ROS node handle.
-  ros::NodeHandle &nodeHandle_;
-
-  //! ROS topic subscriber.
-  ros::Subscriber subscriber_;
-
-  //! ROS topic name to subscribe to.
-  std::string subscriberTopic_;
-
-  //! ROS service server.
-  ros::ServiceServer serviceServer_;
-
-  //! Algorithm computation object.
-  Algorithm algorithm_;
+  hardware_interface::JointHandle joint_handle_[4];  // LF, RF, LB, RB四个关节
 };
 
-} /* namespace */
+}  // namespace hero_chassis_controller
