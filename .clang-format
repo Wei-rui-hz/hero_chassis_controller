@@ -1,0 +1,16 @@
+# ROS C++ Style Guide = Google 风格 + 2 空格缩进 + 120 列
+BasedOnStyle: Google
+Standard: Cpp11
+IndentWidth: 2
+ColumnLimit: 120
+UseTab: Never
+PointerAlignment: Left
+DerivePointerAlignment: false
+AccessModifierOffset: -2
+NamespaceIndentation: None
+FixNamespaceComments: true
+MaxEmptyLinesToKeep: 1
+SpacesBeforeTrailingComments: 2
+SortIncludes: true
+AllowShortFunctionsOnASingleLine: Inline
+BreakBeforeBraces: Attach

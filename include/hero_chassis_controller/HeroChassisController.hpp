@@ -1,39 +1,38 @@
 #pragma once
 
+#include <control_toolbox/pid.h>
 #include <controller_interface/controller.h>
+#include <dynamic_reconfigure/server.h>
 #include <geometry_msgs/Twist.h>
 #include <hardware_interface/joint_command_interface.h>
-#include <realtime_tools/realtime_buffer.h>
-#include <ros/ros.h>
-#include <control_toolbox/pid.h>
-#include <dynamic_reconfigure/server.h>
 #include <hero_chassis_controller/HeroChassisControllerConfig.h>
-#include <cmath>
 #include <nav_msgs/Odometry.h>
+#include <realtime_tools/realtime_buffer.h>
 #include <realtime_tools/realtime_publisher.h>
+#include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 
+#include <cmath>
+
 namespace hero_chassis_controller {
 
-class HeroChassisController
-    : public controller_interface::Controller<hardware_interface::EffortJointInterface> {
- public:
-  bool init(hardware_interface::EffortJointInterface* effort_joint_interface,
-            ros::NodeHandle& root_nh,
+class HeroChassisController : public controller_interface::Controller<hardware_interface::EffortJointInterface> {
+public:
+  bool init(hardware_interface::EffortJointInterface* effort_joint_interface, ros::NodeHandle& root_nh,
             ros::NodeHandle& controller_nh) override;
 
   void starting(const ros::Time& time) override;
   void update(const ros::Time& time, const ros::Duration& period) override;
   void stopping(const ros::Time& time) override;
 
- private:
+private:
   void cmdVelCallback(const geometry_msgs::Twist& msg);
   void reconfigCallback(HeroChassisControllerConfig& config, uint32_t level);
   boost::shared_ptr<dynamic_reconfigure::Server<HeroChassisControllerConfig>> reconfig_server_;
 
   hardware_interface::JointHandle joint_handle_[4];  // LF RF LB RB
-  double desired_wheel_vel_[4]{};  // LF RF LB RB
+  double desired_wheel_vel_[4]{};                    // LF RF LB RB
 
   control_toolbox::Pid pid_[4];  // 一个轮子一个，各自持有积分状态
 
@@ -53,8 +52,8 @@ class HeroChassisController
   tf::TransformBroadcaster tf_broadcaster_;
 
   // ---- 世界系速度模式 ----
-  std::string velocity_mode_{"chassis"}; // "chassis" 或 "world"
-  std::string world_frame_{"odom"}; // 世界系参考帧
+  std::string velocity_mode_{"chassis"};  // "chassis" 或 "world"
+  std::string world_frame_{"odom"};       // 世界系参考帧
   tf::TransformListener tf_listener_;
 };
 

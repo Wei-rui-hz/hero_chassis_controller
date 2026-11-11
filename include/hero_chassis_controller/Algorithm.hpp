@@ -1,8 +1,7 @@
 #pragma once
 
-#include <memory>
-
 #include <Eigen/Core>
+#include <memory>
 
 namespace hero_chassis_controller {
 
@@ -10,7 +9,7 @@ namespace hero_chassis_controller {
  * Class containing the algorithmic part of the package.
  */
 class Algorithm {
- public:
+public:
   /*!
    * Constructor.
    */
@@ -31,7 +30,7 @@ class Algorithm {
    * Add multiple measurements as once.
    * @param data new data.
    */
-  void addData(const Eigen::VectorXd &data);
+  void addData(const Eigen::VectorXd& data);
 
   /*!
    * Get the computed average of the data.
@@ -39,8 +38,7 @@ class Algorithm {
    */
   double getAverage() const;
 
- private:
-
+private:
   //! Forward declared structure that will contain the data
   struct Data;
 
@@ -48,4 +46,4 @@ class Algorithm {
   std::unique_ptr<Data> data_;
 };
 
-} /* namespace */
+}  // namespace hero_chassis_controller

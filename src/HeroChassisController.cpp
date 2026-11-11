@@ -6,8 +6,8 @@ namespace hero_chassis_controller {
 
 bool HeroChassisController::init(hardware_interface::EffortJointInterface* effort_joint_interface,
                                  ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) {
-  const char* joint_names[4] = {"left_front_wheel_joint", "right_front_wheel_joint",
-                                "left_back_wheel_joint", "right_back_wheel_joint"};
+  const char* joint_names[4] = {"left_front_wheel_joint", "right_front_wheel_joint", "left_back_wheel_joint",
+                                "right_back_wheel_joint"};
   for (int i = 0; i < 4; ++i) {
     joint_handle_[i] = effort_joint_interface->getHandle(joint_names[i]);
   }
@@ -20,7 +20,7 @@ bool HeroChassisController::init(hardware_interface::EffortJointInterface* effor
   controller_nh.param<std::string>("world_frame", world_frame_, "odom");
   if (velocity_mode_ != "chassis" && velocity_mode_ != "world") {
     ROS_WARN_STREAM("[hero_chassis_controller] unknown velocity_mode '" << velocity_mode_
-                    << "', fallback to 'chassis'");
+                                                                        << "', fallback to 'chassis'");
     velocity_mode_ = "chassis";
   }
   odom_pub_.init(root_nh, "odom", 4);
@@ -31,9 +31,9 @@ bool HeroChassisController::init(hardware_interface::EffortJointInterface* effor
   cmd_vel_buffer_.writeFromNonRT(geometry_msgs::Twist());
   cmd_vel_sub_ = root_nh.subscribe("cmd_vel", 1, &HeroChassisController::cmdVelCallback, this);
 
-  ROS_INFO_STREAM("[hero_chassis_controller] initialized: r=" << wheel_radius_
-                  << " lx=" << half_length_ << " ly=" << half_width_
-                  << " mode=" << velocity_mode_ << " (dynamic reconfigure ready)");
+  ROS_INFO_STREAM("[hero_chassis_controller] initialized: r=" << wheel_radius_ << " lx=" << half_length_
+                                                              << " ly=" << half_width_ << " mode=" << velocity_mode_
+                                                              << " (dynamic reconfigure ready)");
   return true;
 }
 
@@ -104,7 +104,7 @@ void HeroChassisController::update(const ros::Time& time, const ros::Duration& p
     joint_handle_[i].setCommand(torque);
   }
 
-    // ---- 正运动学：实际轮速 -> 车体速度 ----
+  // ---- 正运动学：实际轮速 -> 车体速度 ----
   const double w1 = joint_handle_[0].getVelocity();  // LF
   const double w2 = joint_handle_[1].getVelocity();  // RF
   const double w3 = joint_handle_[2].getVelocity();  // LB
@@ -165,5 +165,4 @@ void HeroChassisController::stopping(const ros::Time& /*time*/) {
 
 }  // namespace hero_chassis_controller
 
-PLUGINLIB_EXPORT_CLASS(hero_chassis_controller::HeroChassisController,
-                       controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS(hero_chassis_controller::HeroChassisController, controller_interface::ControllerBase)
