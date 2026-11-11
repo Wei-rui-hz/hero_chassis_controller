@@ -6,6 +6,7 @@ controller:
     half_width: 0.2
     velocity_mode: chassis
     odom_publish_rate: 50.0
+    world_frame: odom
     lf_p: 1.0
     lf_i: 0.1
     lf_d: 0.0

@@ -16,6 +16,13 @@ bool HeroChassisController::init(hardware_interface::EffortJointInterface* effor
   controller_nh.param("half_length", half_length_, 0.2);
   controller_nh.param("half_width", half_width_, 0.2);
   controller_nh.param("odom_publish_rate", odom_publish_rate_, 50.0);
+  controller_nh.param<std::string>("velocity_mode", velocity_mode_, "chassis");
+  controller_nh.param<std::string>("world_frame", world_frame_, "odom");
+  if (velocity_mode_ != "chassis" && velocity_mode_ != "world") {
+    ROS_WARN_STREAM("[hero_chassis_controller] unknown velocity_mode '" << velocity_mode_
+                    << "', fallback to 'chassis'");
+    velocity_mode_ = "chassis";
+  }
   odom_pub_.init(root_nh, "odom", 4);
   reconfig_server_.reset(new dynamic_reconfigure::Server<HeroChassisControllerConfig>(controller_nh));
   reconfig_server_->setCallback(
@@ -25,12 +32,36 @@ bool HeroChassisController::init(hardware_interface::EffortJointInterface* effor
   cmd_vel_sub_ = root_nh.subscribe("cmd_vel", 1, &HeroChassisController::cmdVelCallback, this);
 
   ROS_INFO_STREAM("[hero_chassis_controller] initialized: r=" << wheel_radius_
-                  << " lx=" << half_length_ << " ly=" << half_width_ << " (dynamic reconfigure ready)");
+                  << " lx=" << half_length_ << " ly=" << half_width_
+                  << " mode=" << velocity_mode_ << " (dynamic reconfigure ready)");
   return true;
 }
 
 void HeroChassisController::cmdVelCallback(const geometry_msgs::Twist& msg) {
-  cmd_vel_buffer_.writeFromNonRT(msg);
+  geometry_msgs::Twist cmd = msg;
+
+  if (velocity_mode_ == "world") {
+    tf::StampedTransform transform;
+    try {
+      // 取最新的 base_link 在 world_frame 下的位姿
+      tf_listener_.lookupTransform(world_frame_, "base_link", ros::Time(0), transform);
+    } catch (const tf::TransformException& ex) {
+      ROS_WARN_THROTTLE(1.0, "[hero_chassis_controller] tf lookup failed: %s", ex.what());
+      // 查不到变换就发零速度（启动瞬间 /odom 还没发出来时会走到这里）
+      cmd_vel_buffer_.writeFromNonRT(geometry_msgs::Twist());
+      return;
+    }
+
+    const double yaw = tf::getYaw(transform.getRotation());
+    const double c = std::cos(yaw);
+    const double s = std::sin(yaw);
+
+    // 世界系 -> 底盘系：绕 z 轴旋转 -yaw
+    cmd.linear.x = c * msg.linear.x + s * msg.linear.y;
+    cmd.linear.y = -s * msg.linear.x + c * msg.linear.y;
+  }
+
+  cmd_vel_buffer_.writeFromNonRT(cmd);
 }
 
 void HeroChassisController::reconfigCallback(HeroChassisControllerConfig& config, uint32_t /*level*/) {
