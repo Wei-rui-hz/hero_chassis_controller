@@ -15,6 +15,8 @@ bool HeroChassisController::init(hardware_interface::EffortJointInterface* effor
   controller_nh.param("wheel_radius", wheel_radius_, 0.07625);
   controller_nh.param("half_length", half_length_, 0.2);
   controller_nh.param("half_width", half_width_, 0.2);
+  controller_nh.param("odom_publish_rate", odom_publish_rate_, 50.0);
+  odom_pub_.init(root_nh, "odom", 4);
   reconfig_server_.reset(new dynamic_reconfigure::Server<HeroChassisControllerConfig>(controller_nh));
   reconfig_server_->setCallback(
       [this](HeroChassisControllerConfig& config, uint32_t level) { reconfigCallback(config, level); });
@@ -44,9 +46,13 @@ void HeroChassisController::starting(const ros::Time& /*time*/) {
     pid_[i].reset();
     joint_handle_[i].setCommand(0.0);
   }
+  odom_x_ = 0.0;
+  odom_y_ = 0.0;
+  odom_theta_ = 0.0;
+  odom_pub_accum_ = 0.0;
 }
 
-void HeroChassisController::update(const ros::Time& /*time*/, const ros::Duration& period) {
+void HeroChassisController::update(const ros::Time& time, const ros::Duration& period) {
   geometry_msgs::Twist* cmd = cmd_vel_buffer_.readFromRT();
 
   const double vx = cmd ? cmd->linear.x : 0.0;
@@ -65,6 +71,58 @@ void HeroChassisController::update(const ros::Time& /*time*/, const ros::Duratio
     if (torque > 5.0) torque = 5.0;
     if (torque < -5.0) torque = -5.0;
     joint_handle_[i].setCommand(torque);
+  }
+
+    // ---- 正运动学：实际轮速 -> 车体速度 ----
+  const double w1 = joint_handle_[0].getVelocity();  // LF
+  const double w2 = joint_handle_[1].getVelocity();  // RF
+  const double w3 = joint_handle_[2].getVelocity();  // LB
+  const double w4 = joint_handle_[3].getVelocity();  // RB
+
+  const double vx_act = wheel_radius_ * 0.25 * (w1 + w2 + w3 + w4);
+  const double vy_act = wheel_radius_ * 0.25 * (-w1 + w2 + w3 - w4);
+  const double wz_act = wheel_radius_ / (4.0 * l) * (-w1 + w2 - w3 + w4);
+
+  // ---- 积分成位姿 ----
+  const double dt = period.toSec();
+  const double cos_t = std::cos(odom_theta_);
+  const double sin_t = std::sin(odom_theta_);
+  odom_x_ += (vx_act * cos_t - vy_act * sin_t) * dt;
+  odom_y_ += (vx_act * sin_t + vy_act * cos_t) * dt;
+  odom_theta_ += wz_act * dt;
+
+  // ---- 按 publish_rate 节流发布 ----
+  odom_pub_accum_ += dt;
+  if (odom_pub_accum_ >= 1.0 / odom_publish_rate_) {
+    odom_pub_accum_ = 0.0;
+
+    const geometry_msgs::Quaternion q = tf::createQuaternionMsgFromYaw(odom_theta_);
+
+    if (odom_pub_.trylock()) {
+      odom_pub_.msg_.header.stamp = time;
+      odom_pub_.msg_.header.frame_id = "odom";
+      odom_pub_.msg_.child_frame_id = "base_link";
+
+      odom_pub_.msg_.pose.pose.position.x = odom_x_;
+      odom_pub_.msg_.pose.pose.position.y = odom_y_;
+      odom_pub_.msg_.pose.pose.position.z = 0.0;
+      odom_pub_.msg_.pose.pose.orientation = q;
+
+      odom_pub_.msg_.twist.twist.linear.x = vx_act;
+      odom_pub_.msg_.twist.twist.linear.y = vy_act;
+      odom_pub_.msg_.twist.twist.angular.z = wz_act;
+      odom_pub_.unlockAndPublish();
+    }
+
+    geometry_msgs::TransformStamped tf_msg;
+    tf_msg.header.stamp = time;
+    tf_msg.header.frame_id = "odom";
+    tf_msg.child_frame_id = "base_link";
+    tf_msg.transform.translation.x = odom_x_;
+    tf_msg.transform.translation.y = odom_y_;
+    tf_msg.transform.translation.z = 0.0;
+    tf_msg.transform.rotation = q;
+    tf_broadcaster_.sendTransform(tf_msg);
   }
 }
 

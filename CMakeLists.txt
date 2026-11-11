@@ -22,6 +22,8 @@ find_package(catkin REQUIRED
     realtime_tools
     control_toolbox
     dynamic_reconfigure
+    nav_msgs
+    tf
     )
 
 ## Find system libraries

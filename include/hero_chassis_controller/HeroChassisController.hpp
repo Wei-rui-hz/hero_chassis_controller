@@ -8,6 +8,10 @@
 #include <control_toolbox/pid.h>
 #include <dynamic_reconfigure/server.h>
 #include <hero_chassis_controller/HeroChassisControllerConfig.h>
+#include <cmath>
+#include <nav_msgs/Odometry.h>
+#include <realtime_tools/realtime_publisher.h>
+#include <tf/transform_broadcaster.h>
 
 namespace hero_chassis_controller {
 
@@ -38,6 +42,14 @@ class HeroChassisController
 
   realtime_tools::RealtimeBuffer<geometry_msgs::Twist> cmd_vel_buffer_;
   ros::Subscriber cmd_vel_sub_;
+    // ---- 里程计 ----
+  double odom_x_{0.0};
+  double odom_y_{0.0};
+  double odom_theta_{0.0};
+  double odom_publish_rate_{50.0};
+  double odom_pub_accum_{0.0};  // 发布节流累加器
+  realtime_tools::RealtimePublisher<nav_msgs::Odometry> odom_pub_;
+  tf::TransformBroadcaster tf_broadcaster_;
 };
 
 }  // namespace hero_chassis_controller
